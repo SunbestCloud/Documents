@@ -1,0 +1,74 @@
+---
+- name: Clean YUM cache and modify grub.cfg
+  hosts: all
+  become: yes
+  tasks:
+    - name: Clean YUM cache
+      yum:
+        name: "*"
+        state: cache_clean
+      register: yum_clean_result
+
+    - name: Modify grub.cfg
+      shell: chattr -i /boot/grub/grub.cfg
+      when: ansible_distribution_major_version == '6'
+
+    - name: Modify grub.cfg
+      shell: chattr -i /boot/grub2/grub.cfg
+      when: ansible_distribution_major_version == '7'
+
+    - name: Run who command
+      command: who
+      register: who_result
+
+    - name: Run uptime command
+      command: uptime
+      register: uptime_result
+
+    - name: Run script
+      script: /path/to/script.sh
+      register: script_result
+
+    - name: Notify user of pending reboot
+      shell: echo "Server will reboot in 5 minutes" | wall
+      async: 0
+      poll: 0
+      register: notify_result
+
+    - name: Reboot server
+      reboot:
+        msg: "Reboot initiated by Ansible"
+        countdown: 300
+      register: reboot_result
+
+    - name: Wait for server to come back online
+      wait_for_connection:
+        timeout: 300
+
+    - name: Print kernel version
+      command: uname -r
+      register: kernel_version
+
+    - name: Display results
+      debug:
+        msg: |
+          YUM clean result: {{ yum_clean_result }}
+          WHO command result: {{ who_result.stdout }}
+          Uptime command result: {{ uptime_result.stdout }}
+          Script result: {{ script_result }}
+          Notification result: {{ notify_result }}
+          Reboot result: {{ reboot_result }}
+          Kernel version: {{ kernel_version.stdout }}
+ 
+- name: Display kernel version after reboot
+  hosts: all
+  become: yes
+  gather_facts: yes
+  tasks:
+    - name: Print kernel version
+      command: uname -r
+      register: kernel_version
+
+    - name: Display kernel version
+      debug:
+        msg: "Server {{ inventory_hostname }} has kernel version {{ kernel_version.stdout }}"

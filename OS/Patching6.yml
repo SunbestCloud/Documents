@@ -1,0 +1,64 @@
+---
+- name: Clean YUM cache and modify grub.cfg
+  hosts: all
+  become: yes
+  tasks:
+    - name: Clean YUM cache
+      yum:
+        name: "*"
+        state: cache_clean
+      register: yum_clean_result
+
+    - name: Modify grub.cfg
+      shell: chattr -i /boot/grub/grub.cfg
+      when: ansible_distribution_major_version == '6'
+
+    - name: Modify grub.cfg
+      shell: chattr -i /boot/grub2/grub.cfg
+      when: ansible_distribution_major_version == '7'
+
+    - name: Run who command
+      command: who
+      register: who_result
+
+    - name: Run uptime command
+      command: uptime
+      register: uptime_result
+
+    - name: Run script
+      script: /path/to/script.sh
+      register: script_result
+
+    - name: Notify user of pending reboot
+      shell: echo "Server will reboot in 5 minutes" | wall
+      register: notification_result
+
+    - name: Reboot server
+      reboot:
+        msg: "Reboot initiated by Ansible"
+        countdown: 300
+      register: reboot_result
+
+    - name: Wait for server to come back up
+      wait_for:
+        host: "{{ inventory_hostname }}"
+        port: 22
+        delay: 10
+        timeout: 300
+      register: server_up
+
+    - name: Print kernel version
+      command: uname -r
+      register: kernel_version
+
+    - name: Display results
+      debug:
+        msg: |
+          YUM clean result: {{ yum_clean_result }}
+          WHO command result: {{ who_result.stdout }}
+          Uptime command result: {{ uptime_result.stdout }}
+          Script result: {{ script_result }}
+          Notification result: {{ notification_result }}
+          Reboot result: {{ reboot_result }}
+          Server up result: {{ server_up }}
+          Kernel version: {{ kernel_version.stdout }}

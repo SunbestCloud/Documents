@@ -1,0 +1,36 @@
+---
+- name: Check and restart services
+  hosts: all
+  become: yes
+  tasks:
+    - name: Check status of service
+      systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      register: service_status
+      loop:
+        - httpd
+        - sshd
+        - mariadb
+
+    - name: Restart service if it is not running
+      systemd:
+        name: "{{ item.item }}"
+        state: restarted
+      when: not item.status.active
+      loop: "{{ service_status.results }}"
+      register: restart_result
+
+    - name: Show status of services after restart
+      systemd:
+        name: "{{ item.item }}"
+        state: started
+        enabled: yes
+      loop: "{{ restart_result.results }}"
+      register: status_after_restart
+
+    - name: Display status of services after restart
+      debug:
+        msg: "Service {{ item.item }} status: {{ item.status.active }}"
+      loop: "{{ status_after_restart.results }}"

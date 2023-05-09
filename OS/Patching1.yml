@@ -1,0 +1,50 @@
+---
+- name: Clean yum cache, run commands, and reboot servers
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Clean yum packages, metadata, and headers
+      yum:
+        name: '*'
+        state: latest
+        update_cache: yes
+        cache_valid_time: 0
+        exclude: kernel*
+      register: yum_clean_output
+
+    - name: Run who command
+      command: who
+      register: who_output
+
+    - name: Run uptime command
+      command: uptime
+      register: uptime_output
+
+    - name: Run script
+      script: /path/to/script.sh
+      register: script_output
+
+    - name: Send message to reboot server
+      command: echo "Please reboot the server now."
+      register: reboot_msg_output
+
+    - name: Reboot servers
+      reboot:
+      register: reboot_output
+
+    - name: Print kernel version
+      command: uname -r
+      register: kernel_version_output
+
+    - name: Display results
+      debug:
+        var: item.stdout_lines
+      with_items:
+        - yum_clean_output
+        - who_output
+        - uptime_output
+        - script_output
+        - reboot_msg_output
+        - reboot_output
+        - kernel_version_output

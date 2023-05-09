@@ -1,0 +1,88 @@
+#############################################
+		Transfer File
+#############################################
+---
+- name: Transfer files from one host to another
+  hosts: source_host
+  become: true
+  vars:
+    dest_host: destination_host
+    files_to_transfer:
+      - /path/to/file1
+      - /path/to/file2
+  tasks:
+    - name: Copy files to destination host
+      copy:
+        src: "{{ item }}"
+        dest: "/path/on/destination/{{ item }}"
+      with_items: "{{ files_to_transfer }}"
+      delegate_to: "{{ dest_host }}"
+
+
+2)
+
+---
+- name: Transfer files from one host to another
+  hosts: source_host
+  gather_facts: no
+
+  tasks:
+    - name: Copy file to destination host
+      copy:
+        src: /path/to/local/file
+        dest: /path/to/remote/file
+      delegate_to: destination_host
+
+
+#############################################
+ Transfer Directory
+#############################################
+---
+- name: Transfer directory from one host to another
+  hosts: source_host
+  gather_facts: no
+
+  tasks:
+    - name: Copy directory to destination host
+      copy:
+        src: /path/to/local/directory/
+        dest: /path/to/remote/directory/
+      delegate_to: destination_host
+	  
+---
+- name: Transfer directory from one host to another
+  hosts: source_host
+  gather_facts: no
+
+  tasks:
+    - name: Copy directory to destination host
+      copy:
+        src: /path/to/local/directory/
+        dest: /path/to/remote/directory/
+      delegate_to: destination_host
+      recursive: yes
+
+We also use the recursive parameter to copy the entire directory tree.
+
+#############################################
+ Transfer base on Pattern
+#############################################
+---
+- name: Transfer files of a specific type from one host to another
+  hosts: source_host
+  gather_facts: no
+
+  tasks:
+    - name: Find files to transfer
+      find:
+        paths: /path/to/local/files
+        patterns: "*.txt"
+        recurse: yes
+      register: files_to_transfer
+
+    - name: Copy files to destination host
+      copy:
+        src: "{{ item.path }}"
+        dest: /path/to/remote/files/
+      delegate_to: destination_host
+      with_items: "{{ files_to_transfer.files }}"

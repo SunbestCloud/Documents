@@ -1,0 +1,39 @@
+- hosts: your_servers
+  tasks:
+    - name: Clean yum packages, metadata, and headers
+      yum:
+        name: '*'
+        state: absent
+      become: true
+      vars:
+        yum_clean_options: packages metadata headers all
+
+    - name: Run commands who and uptime
+      command: "{{ item }}"
+      with_items:
+        - who
+        - uptime
+      register: command_output
+      become: true
+
+    - name: Run script
+      script: /path/to/your/script.sh
+      become: true
+
+    - name: Send message to reboot server
+      shell: echo "Please reboot the server now."
+      notify: reboot
+
+    - name: Reboot server
+      reboot:
+      become: true
+      when: "'reboot' in ansible_facts['notify']"
+
+    - name: Produce result for each server kernel
+      command: uname -r
+      register: kernel_version
+      become: true
+
+    - name: Display kernel version for each server
+      debug:
+        msg: "Server {{ inventory_hostname }} has kernel version {{ kernel_version.stdout }}"

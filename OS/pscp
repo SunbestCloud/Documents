@@ -1,0 +1,18 @@
+@echo off
+
+set SERVER_IP=linux_server_ip
+set SERVER_PORT=22
+set SERVER_USER=linux_username
+set SERVER_PASSWORD=linux_password
+
+set LOCAL_FILE_PATH=C:\path\to\local\file
+set REMOTE_DIRECTORY_PATH=/path/to/remote/directory/
+
+pscp -P %SERVER_PORT% -pw %SERVER_PASSWORD% %LOCAL_FILE_PATH% %SERVER_USER%@%SERVER_IP%:%REMOTE_DIRECTORY_PATH%
+
+#Save the script as a .bat file, and execute it in the Command Prompt to initiate the transfer. 
+
+#OR
+
+pscp -r -P <ssh_port> <local_file_path> <remote_username>@<remote_host>:<remote_directory>
+pscp -r -P 22 C:\Files\example.txt user@192.168.1.100:/home/user

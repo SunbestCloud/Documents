@@ -1,0 +1,36 @@
+---
+- name: Check and restart services
+  hosts: all
+  become: true
+  vars:
+    services_file: "/path/to/services.txt"
+    services_to_check: "{{ lookup('file', services_file).split('\n') }}"
+  tasks:
+    - name: Check status of services
+      service:
+        name: "{{ item }}"
+        state: started
+        enabled: true
+        enabled_on_boot: true
+      loop: "{{ services_to_check }}"
+      register: service_status
+
+    - name: Restart services if not running
+      service:
+        name: "{{ item.item }}"
+        state: restarted
+        enabled: true
+        enabled_on_boot: true
+      loop: "{{ service_status.results }}"
+      when: item.status != 'running'
+
+    - name: Show status of services after restart
+      service_facts:
+        - name: "{{ item.item }}"
+      loop: "{{ service_status.results }}"
+      register: restarted_service_status
+
+    - name: Display service status after restart
+      debug:
+        var: item.services["{{ item.item }}"].state
+      loop: "{{ restarted_service_status.results }}"

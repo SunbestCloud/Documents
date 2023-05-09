@@ -1,0 +1,47 @@
+---
+- name: Clean Yum Cache, Run Commands, Reboot Servers, and Produce Kernel Results
+  hosts: your_server_group_name
+  become: true
+
+  tasks:
+    - name: Clean Yum Cache
+      yum:
+        name: "*"
+        state: cache_clean
+        exclude: ""
+      register: yum_clean_result
+
+    - name: Run Who and Uptime Commands
+      command: "{{ item }}"
+      register: command_output
+      with_items:
+        - who
+        - uptime
+
+    - name: Run Script
+      script: your_script.sh
+      register: script_output
+
+    - name: Send Reboot Message
+      shell: echo "Your server will reboot in 5 minutes. Please save any unsaved work."
+      notify: reboot
+
+    - name: Reboot Servers
+      reboot:
+      async: 0
+      poll_interval: 5
+      register: reboot_result
+      when: "'changed' in yum_clean_result"
+
+    - name: Produce Kernel Results
+      command: uname -r
+      register: kernel_output
+
+    - name: Print Results
+      debug:
+        var: item.stdout
+      with_items:
+        - command_output.results
+        - script_output
+        - kernel_output
+        - reboot_result
